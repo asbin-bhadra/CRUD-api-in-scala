@@ -16,18 +16,20 @@
 
 package org.knoldus.db
 
+import org.knoldus.model.User
+
 import java.util.UUID
 
 trait DataAccessObject[User] {
-  def add(user: User): UUID
+  def add(user: User): Option[UUID]
 
   def getUsers: List[User]
 
-  def getUserById(id: UUID): List[User]
+  def getUserById(id: Option[UUID]): List[User]
 
-  def updateUserName(id : UUID, newUserName : String):Boolean
+  def update(id : Option[UUID], updatedUser:User):Boolean
 
-  def deleteUserById(id : UUID) : Boolean
+  def deleteUserById(id : Option[UUID]) : Boolean
 
   def deleteAllUsers(): Boolean
 }

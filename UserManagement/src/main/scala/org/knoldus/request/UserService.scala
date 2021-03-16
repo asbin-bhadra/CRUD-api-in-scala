@@ -22,34 +22,40 @@ import org.knoldus.validator.Validator
 
 import java.util.UUID
 
-class UserService(userRepository : DataAccessObject[User]) {
+class UserService(userRepository : DataAccessObject[User], validator: Validator) {
 
-  // Returns id of the user creted
-  def addUser(user : User): UUID={
-    val validator = new Validator
-
-    // Check if email or mobile number valid or not
-    if(validator.isEmailValid(user.email) && validator.isPhoneValid(user.mobileNumber)){
-      userRepository.add(user)
-    }
-    else {
-      // Throw exception if email or password is not valid
-      throw new RuntimeException("Email Id or mobile number is not valid")
+  def addUser(user : User): Option[UUID]={
+    user match{
+      case User(None,_,_,_,_,_) => {
+        if(validator.isEmailValid(user.email) && validator.isPhoneValid(user.mobileNumber)){
+          val uuid = UUID.randomUUID()
+          userRepository.add(user.copy(id=Option(uuid)))
+        }
+        else {
+          throw new RuntimeException("Email Id or mobile number is not valid")
+        }
+      }
+      case User(Some(_),_,_,_,_,_) => throw new RuntimeException("Invalid user ID")
     }
   }
 
-  // Returns list of user
   def getUsers: List[User] = userRepository.getUsers
 
-  def getUserById(id : UUID): List[User] ={
+  def getUserById(id : Option[UUID]): List[User] ={
     userRepository.getUserById(id)
   }
 
-  def updateUserName(id : UUID, newUserName :  String): Boolean={
-    userRepository.updateUserName(id,newUserName)
+  def updateUser(id : Option[UUID], updatedUser: User): Boolean={
+    if(validator.isEmailValid(updatedUser.email) && validator.isPhoneValid(updatedUser.mobileNumber)){
+      userRepository.update(id, updatedUser)
+    }
+    else {
+      throw new RuntimeException("Email Id or mobile number is not valid")
+    }
+
   }
 
-  def deleteUserById(id : UUID): Boolean={
+  def deleteUserById(id : Option[UUID]): Boolean={
     userRepository.deleteUserById(id)
   }
 

@@ -17,36 +17,25 @@
 package org.knoldus.db
 
 import org.knoldus.model.User
-import org.knoldus.validator.Validator
 
 import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
 class UserRepository extends DataAccessObject[User] {
 
-  // Initialize an empty ListBuffer
-  val userList : ListBuffer[User] = ListBuffer.empty[User]
-  val validator = new Validator
+  private val userList : ListBuffer[User] = ListBuffer.empty[User]
 
-  // Add a new user
-  override def add(user : User):UUID={
-    // get a new random UUID for ID
-    val uuid = UUID.randomUUID()
-    user match{
-      // If no user id found than assign a random UUID as a user id
-      case User(None,_,_,_,_,_) => userList +=user.copy(id=Option(uuid));uuid
-      // If custom ID received throw exception
-      case User(Some(_),_,_,_,_,_) => throw new RuntimeException("Invalid user ID")
-    }
+  override def add(user : User):Option[UUID]={
+    userList +=user
+    user.id
   }
 
   override def getUsers: List[User] = {
-    // If List is not empty return userList else throw RuntimeException
-    if(userList.nonEmpty) userList.toList else throw new RuntimeException("No user found")
+    userList.toList
   }
 
-  override def getUserById(id: UUID): List[User] = {
-    val userDetails = userList.filter(userList => if(userList.id.get == id) true else false).toList
+  override def getUserById(id: Option[UUID]): List[User] = {
+    val userDetails = userList.filter(item=>item.id == id).toList
     if (userDetails != Nil){
       userDetails
     }
@@ -55,30 +44,37 @@ class UserRepository extends DataAccessObject[User] {
     }
   }
 
-  override def updateUserName(id: UUID, newUserName: String): Boolean = {
-    // status flag is used to identify if user exist or not
-    var status : Boolean = false
-
-    userList.zipWithIndex.foreach{
-      case(userDetails,index) =>
-        if(userDetails.id.get == id){
-          // Update the username
-          userList.update(index,userDetails.copy(userName = newUserName))
-          status = true
-        }
-
-    }
-    if(status) status else throw new RuntimeException("User not found")
+  override def update(id: Option[UUID], updatedUser: User): Boolean = {
+    val userId: Option[UUID] = getUserId(id)
+    val list = userList.filterNot(item=>item.id == id)
+    list +=updatedUser.copy(id=userId)
+    userList.clear()
+    userList ++= list
+    true
   }
 
-  override def deleteUserById(id: UUID): Boolean = {
+  def getUserId(id:Option[UUID]): Option[UUID] ={
+    var userId :Option[UUID]= None
+    userList.foreach{
+      userDetails=>{
+        if(userDetails.id == id) userId = userDetails.id
+      }
+    }
+    if (userId.equals(None)){
+      throw new RuntimeException("User not found")
+    }
+    else {
+      userId
+    }
+  }
+
+  override def deleteUserById(id: Option[UUID]): Boolean = {
     // status flag is used to identify if user exist or not
     var status = false
 
     userList.foreach{
       userDetails =>
-        if(userDetails.id.get == id){
-          // Remove user from the list
+        if(userDetails.id == id){
           userList -= userDetails
           status = true
         }
@@ -88,14 +84,11 @@ class UserRepository extends DataAccessObject[User] {
 
   override def deleteAllUsers(): Boolean = {
     if(userList.nonEmpty){
-      // Remove all user from the list
       userList.remove(userList.length-1)
       true
     }
     else{
-      // Throw exception if no user found
-      throw new RuntimeException("No user found")
+      false
     }
   }
-
 }

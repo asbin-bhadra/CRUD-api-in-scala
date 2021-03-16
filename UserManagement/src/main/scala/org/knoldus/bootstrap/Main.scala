@@ -19,36 +19,37 @@ package org.knoldus.bootstrap
 import org.knoldus.db.{DataAccessObject, UserRepository}
 import org.knoldus.model.{User, UserType}
 import org.knoldus.request.UserService
-
+import org.knoldus.validator.Validator
 
 object Main extends App{
 
     val customer = User(None,"aditya111", "aditya111@gmail.com", Option("Noida"), "7988313043",UserType.Customer)
     val admin = User(None, "rahul", "rahul1996@gmail.com", Option("Gurgaon"), "8724835905", UserType.Admin)
+    val updatedAdmin =User(None, "rahul1996", "rahul1996@gmail.com", Option("Gurgaon"), "8724835905", UserType.Admin)
 
     val userRepository : DataAccessObject[User] = new UserRepository
-    val userService = new UserService(userRepository)
+    val userService = new UserService(userRepository,new Validator)
 
 
-    println("Creating Customer and Admin User...")
+    print("Creating Customer and Admin User...\n")
     val customerId = userService.addUser(customer)
     val adminId = userService.addUser(admin)
-    println("Users has been created")
-    println("List of All users")
-    println(userService.getUsers)
-    println("Updateing username of Admin user")
-    userService.updateUserName(adminId,"rahul1996")
-    println("Username has been updated")
-    println(userService.getUserById(adminId))
-    println("Deleting Customer")
+    print("Users has been created\n")
+    print("List of All users\n")
+    print(userService.getUsers)
+    print("Updateing username of Admin user\n")
+    print(userService.updateUser(adminId,updatedAdmin) + "\n")
+    print("Username has been updated\n")
+    print(userService.getUserById(adminId) + "\n")
+    print("Deleting Customer\n")
     userService.deleteUserById(customerId)
-    println("Customer has been deleted")
-    println("List of All users")
-    println(userService.getUsers)
-    println("Deleing All users")
+    print("Customer has been deleted\n")
+    print("List of All users\n")
+    print(userService.getUsers + "\n")
+    print("Deleing All users\n")
     userService.deleteAllUsers()
-    println("Users has been deleted")
-    println("List of All user")
-    println(userService.getUsers)
+    print("Users has been deleted\n")
+    print("List of All user\n")
+    print(userService.getUsers)
 
 }
