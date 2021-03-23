@@ -16,7 +16,6 @@
 
 package org.knoldus.db
 
-import org.knoldus.model.User
 
 import java.util.UUID
 

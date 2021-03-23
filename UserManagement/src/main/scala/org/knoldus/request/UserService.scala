@@ -25,18 +25,7 @@ import java.util.UUID
 class UserService(userRepository : DataAccessObject[User], validator: Validator) {
 
   def addUser(user : User): Option[UUID]={
-    user match{
-      case User(None,_,_,_,_,_) => {
-        if(validator.isEmailValid(user.email) && validator.isPhoneValid(user.mobileNumber)){
-          val uuid = UUID.randomUUID()
-          userRepository.add(user.copy(id=Option(uuid)))
-        }
-        else {
-          throw new RuntimeException("Email Id or mobile number is not valid")
-        }
-      }
-      case User(Some(_),_,_,_,_,_) => throw new RuntimeException("Invalid user ID")
-    }
+    if(isUserValid(user)) userRepository.add(user.copy(id=Option(UUID.randomUUID()))) else throw new RuntimeException("Invalid user ID")
   }
 
   def getUsers: List[User] = userRepository.getUsers
@@ -46,13 +35,7 @@ class UserService(userRepository : DataAccessObject[User], validator: Validator)
   }
 
   def updateUser(id : Option[UUID], updatedUser: User): Boolean={
-    if(validator.isEmailValid(updatedUser.email) && validator.isPhoneValid(updatedUser.mobileNumber)){
-      userRepository.update(id, updatedUser)
-    }
-    else {
-      throw new RuntimeException("Email Id or mobile number is not valid")
-    }
-
+    if(isUserValid(updatedUser)) userRepository.update(id, updatedUser.copy(id=id)) else throw new RuntimeException("Invalid User ID")
   }
 
   def deleteUserById(id : Option[UUID]): Boolean={
@@ -61,6 +44,17 @@ class UserService(userRepository : DataAccessObject[User], validator: Validator)
 
   def deleteAllUsers(): Boolean={
     userRepository.deleteAllUsers()
+  }
+
+  private def isUserValid(user : User): Boolean={
+    user match{
+      case User(None,_,_,_,_,_) =>  if(isEmailMobileNumberValid(user)) true else throw new RuntimeException("Email Id or mobile number is not valid")
+      case User(Some(_),_,_,_,_,_) => false
+    }
+  }
+
+  private def isEmailMobileNumberValid(user : User): Boolean ={
+    if(validator.isEmailValid(user.email) && validator.isPhoneValid(user.mobileNumber)) true else false
   }
 
 }

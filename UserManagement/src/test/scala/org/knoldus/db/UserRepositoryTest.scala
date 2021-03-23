@@ -69,20 +69,6 @@ class UserRepositoryTest extends AnyFlatSpec{
     userRepository.deleteAllUsers()
   }
 
-  "getUserId" should "returns UUID" in {
-    val userId1 = userRepository.add(user1)
-    val userId2 = userRepository.add(user2)
-    val result: Option[UUID] = userRepository.getUserId(userId1)
-    assert(userId1 == result)
-    userRepository.deleteAllUsers()
-  }
-
-  it should "throw RuntimeException" in {
-    assertThrows[RuntimeException] {
-      userRepository.getUserId(Option(UUID.randomUUID()))
-    }
-  }
-
   "deleteUserById" should "returns true" in {
     val userId1 = userRepository.add(user1)
     val userId2 = userRepository.add(user2)
@@ -90,32 +76,16 @@ class UserRepositoryTest extends AnyFlatSpec{
     assert(result)
     userRepository.deleteAllUsers()
   }
-
-  it should "throw RuntimeException" in {
-    assertThrows[RuntimeException] {
-      userRepository.deleteUserById(Option(UUID.randomUUID()))
-    }
+  it should "returns false" in {
+    assert(!userRepository.deleteUserById(Option(UUID.randomUUID())))
+    userRepository.deleteAllUsers()
   }
 
   "deleteAllUsers" should "return true" in {
-    val userId1 = userRepository.add(user1)
-    val userId2 = userRepository.add(user2)
-    val result: Boolean = userRepository.deleteAllUsers()
-    assert(result)
-    userRepository.deleteAllUsers()
+    userRepository.add(user1)
+    assert(userRepository.deleteAllUsers())
   }
   it should "return false" in {
-    val result: Boolean = userRepository.deleteAllUsers()
-    assert(!result)
+    assert(!userRepository.deleteAllUsers())
   }
-
-
-
-
-
 }
-
-
-
-
-

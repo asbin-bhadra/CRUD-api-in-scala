@@ -116,9 +116,8 @@ class UserServiceIntegrationTest extends AnyFlatSpec{
   }
   it should "return false as user not found" in{
     val userId = userService.addUser(user)
-    assertThrows[RuntimeException] {
-      userService.updateUser(Option(UUID.randomUUID()),user.copy(userName = "asbin143"))
-    }
+    val result = userService.updateUser(Option(UUID.randomUUID()),user.copy(userName = "asbin143"))
+    assert(!result)
     userService.deleteAllUsers()
   }
 
@@ -129,13 +128,12 @@ class UserServiceIntegrationTest extends AnyFlatSpec{
     assert(result)
     userService.deleteAllUsers()
   }
-  it should "throw RuntimeException as user not found" in {
-    val userId = userService.addUser(user)
-    assertThrows[RuntimeException] {
-      userService.deleteUserById(Option(UUID.randomUUID()))
-    }
+  it should "return false" in {
+    val result:Boolean = userService.deleteUserById(Option(UUID.randomUUID()))
+    assert(!result)
     userService.deleteAllUsers()
   }
+
   "deleteAllUser" should "return true" in {
     val userId = userService.addUser(user)
     val result:Boolean = userService.deleteAllUsers()

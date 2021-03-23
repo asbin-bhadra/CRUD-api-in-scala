@@ -116,6 +116,15 @@ class UserServiceTest extends AnyFlatSpec{
     val result:Boolean = userService.updateUser(user.id,user)
     assert(result)
   }
+  it should "return false if user ID provided" in{
+    when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
+    when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
+
+    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
+    assertThrows[RuntimeException]{
+      userService.updateUser(user.id,user.copy(id=Some(UUID.randomUUID())))
+    }
+  }
   it should "through RuntimeException as email id invalid" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{false}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
