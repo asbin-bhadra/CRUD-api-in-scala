@@ -14,9 +14,9 @@ I have implemented CRUD api for creating user of type customer and admin in scal
 ```
 sbt compile
 ```
-## Run Code
+## Test Code
 ```
-sbt run
+sbt test
 ```
 
 ## Generate scalastyle config file ( Already created in this project )
