@@ -16,33 +16,34 @@
 
 package org.knoldus.request
 
-import org.knoldus.db.DataAccessObject
+import org.knoldus.repository.DataAccessObject
 import org.knoldus.model.User
 import org.knoldus.validator.Validator
 
 import java.util.UUID
+import scala.concurrent.Future
 
 class UserService(userRepository : DataAccessObject[User], validator: Validator) {
 
-  def addUser(user : User): Option[UUID]={
+  def addUser(user : User): Future[Option[UUID]]={
     if(isUserValid(user)) userRepository.add(user.copy(id=Option(UUID.randomUUID()))) else throw new RuntimeException("Invalid user ID")
   }
 
-  def getUsers: List[User] = userRepository.getUsers
+  def getUsers: Future[List[User]] = userRepository.getUsers
 
-  def getUserById(id : Option[UUID]): List[User] ={
+  def getUserById(id : Option[UUID]): Future[List[User]] ={
     userRepository.getUserById(id)
   }
 
-  def updateUser(id : Option[UUID], updatedUser: User): Boolean={
+  def updateUser(id : Option[UUID], updatedUser: User): Future[Boolean]={
     if(isUserValid(updatedUser)) userRepository.update(id, updatedUser.copy(id=id)) else throw new RuntimeException("Invalid User ID")
   }
 
-  def deleteUserById(id : Option[UUID]): Boolean={
+  def deleteUserById(id : Option[UUID]): Future[Boolean]={
     userRepository.deleteUserById(id)
   }
 
-  def deleteAllUsers(): Boolean={
+  def deleteAllUsers(): Future[Boolean]={
     userRepository.deleteAllUsers()
   }
 

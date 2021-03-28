@@ -16,36 +16,39 @@
 
 package org.knoldus.request
 
-import org.knoldus.db.UserRepository
+import org.knoldus.repository.UserRepository
 import org.knoldus.model.{User, UserType}
 import org.knoldus.validator.Validator
 import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.util.UUID
-
-class UserServiceTest extends AnyFlatSpec{
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+class UserServiceUnitTest extends AnyFlatSpec{
   val mockedValidator: Validator = mock[Validator]
   val mockedUserRepository : UserRepository = mock[UserRepository]
   val user: User = User(None,"asbin bhadra","asbin143@gmail.com",Some("Barpeta Road"),"7988313043",UserType.Customer)
   val userService = new UserService(mockedUserRepository,mockedValidator)
 
 
-  "addUser" should "return id" in{
-    when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
-    when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
+  "addUser" should "add the user" in {
 
-    when(mockedUserRepository.add(user)) thenReturn {Option(UUID.randomUUID())}
+    when(mockedValidator.isEmailValid(user.email)) thenReturn true
+    when(mockedValidator.isPhoneValid(user.mobileNumber)) thenReturn true
+    when(mockedUserRepository.add(user)) thenReturn Future(Option(UUID.randomUUID()))
+
     val result = userService.addUser(user)
     assert(Some(result).nonEmpty)
   }
-  it should "through RuntimeException" in{
+  it should "through RuntimeException as user id provided" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.add(user)) thenReturn {Option(UUID.randomUUID())}
+    when(mockedUserRepository.add(user)) thenReturn {Future(Option(UUID.randomUUID()))}
     assertThrows[RuntimeException] {
-      userService.addUser(user.copy(id = Some(UUID.randomUUID())))
+      Await.result(userService.addUser(user.copy(id = Some(UUID.randomUUID()))),5 seconds)
     }
   }
 
@@ -53,9 +56,9 @@ class UserServiceTest extends AnyFlatSpec{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{false}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.add(user)) thenReturn {Option(UUID.randomUUID())}
+    when(mockedUserRepository.add(user)) thenReturn {Future(Option(UUID.randomUUID()))}
     assertThrows[RuntimeException] {
-      userService.addUser(user)
+      userService.addUser(user.copy(id = Some(UUID.randomUUID())))
     }
   }
 
@@ -63,37 +66,37 @@ class UserServiceTest extends AnyFlatSpec{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{false}
 
-    when(mockedUserRepository.add(user)) thenReturn {Option(UUID.randomUUID())}
+    when(mockedUserRepository.add(user)) thenReturn {Future(Option(UUID.randomUUID()))}
     assertThrows[RuntimeException] {
-      userService.addUser(user)
+      userService.addUser(user.copy(id = Some(UUID.randomUUID())))
     }
   }
   it should "through RuntimeException as mobile number and email id invalid" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{false}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{false}
 
-    when(mockedUserRepository.add(user)) thenReturn {Option(UUID.randomUUID())}
+    when(mockedUserRepository.add(user)) thenReturn {Future(Option(UUID.randomUUID()))}
     assertThrows[RuntimeException] {
-      userService.addUser(user)
+      userService.addUser(user.copy(id = Some(UUID.randomUUID())))
     }
   }
 
 
   "getUser" should "return list of user" in{
-    when(mockedUserRepository.getUsers) thenReturn {List(user)}
-    val result:List[User] = userService.getUsers
+    when(mockedUserRepository.getUsers) thenReturn {Future(List(user))}
+    val result:List[User] = Await.result(userService.getUsers,5 seconds)
     assert(result.nonEmpty)
   }
 
   it should "return empty list" in {
-    when(mockedUserRepository.getUsers) thenReturn {List.empty}
-    val result:List[User] = userService.getUsers
+    when(mockedUserRepository.getUsers) thenReturn {Future(List.empty)}
+    val result:List[User] = Await.result(userService.getUsers,5 seconds)
     assert(result.isEmpty)
   }
 
   "getUserById" should "return list of user" in {
-    when(mockedUserRepository.getUserById(user.id)) thenReturn {List(user)}
-    val result:List[User] = userService.getUserById(user.id)
+    when(mockedUserRepository.getUserById(user.id)) thenReturn {Future(List(user))}
+    val result:List[User] = Await.result(userService.getUserById(user.id),5 seconds)
     assert(result.nonEmpty)
   }
 
@@ -103,8 +106,7 @@ class UserServiceTest extends AnyFlatSpec{
       when(mockedUserRepository.getUserById(user.id)) thenThrow(throw new RuntimeException)
     }
     assertThrows[RuntimeException] {
-
-      userService.getUserById(user.id)
+      Await.result(userService.getUserById(user.id),5 seconds)
     }
   }
 
@@ -112,35 +114,35 @@ class UserServiceTest extends AnyFlatSpec{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
-    val result:Boolean = userService.updateUser(user.id,user)
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(true)}
+    val result:Boolean = Await.result(userService.updateUser(user.id,user),5 seconds)
     assert(result)
   }
   it should "return false if user ID provided" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(true)}
     assertThrows[RuntimeException]{
-      userService.updateUser(user.id,user.copy(id=Some(UUID.randomUUID())))
+      Await.result(userService.updateUser(user.id,user.copy(id=Some(UUID.randomUUID()))),5 seconds)
     }
   }
   it should "through RuntimeException as email id invalid" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{false}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(true)}
     assertThrows[RuntimeException] {
-      userService.updateUser(user.id,user)
+      Await.result(userService.updateUser(user.id,user),5 seconds)
     }
   }
   it should "through RuntimeException as mobile number invalid" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{false}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(true)}
     assertThrows[RuntimeException] {
-      userService.updateUser(user.id,user)
+      Await.result(userService.updateUser(user.id,user),5 seconds)
     }
   }
 
@@ -148,39 +150,39 @@ class UserServiceTest extends AnyFlatSpec{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{false}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{false}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {true}
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(true)}
     assertThrows[RuntimeException] {
-      userService.updateUser(user.id,user)
+      Await.result(userService.updateUser(user.id,user),5 seconds)
     }
   }
   it should "return false" in{
     when(mockedValidator.isEmailValid("asbin143@gmail.com")) thenReturn{true}
     when(mockedValidator.isPhoneValid("7988313043")) thenReturn{true}
 
-    when(mockedUserRepository.update(user.id,user)) thenReturn {false}
-    val result = userService.updateUser(user.id,user)
+    when(mockedUserRepository.update(user.id,user)) thenReturn {Future(false)}
+    val result = Await.result(userService.updateUser(user.id,user),5 seconds)
     assert(!result)
   }
 
 
   "deleteUserById" should "return true" in {
-    when(mockedUserRepository.deleteUserById(user.id)) thenReturn {true}
-    val result:Boolean = userService.deleteUserById(user.id)
+    when(mockedUserRepository.deleteUserById(user.id)) thenReturn {Future(true)}
+    val result:Boolean = Await.result(userService.deleteUserById(user.id),5 seconds)
     assert(result)
   }
   it should "return false" in {
-    when(mockedUserRepository.deleteUserById(user.id)) thenReturn {false}
-    val result:Boolean = userService.deleteUserById(user.id)
+    when(mockedUserRepository.deleteUserById(user.id)) thenReturn {Future(false)}
+    val result:Boolean = Await.result(userService.deleteUserById(user.id),5 seconds)
     assert(!result)
   }
   "deleteAllUser" should "return true" in {
-    when(mockedUserRepository.deleteAllUsers()) thenReturn {true}
-    val result:Boolean = userService.deleteAllUsers()
+    when(mockedUserRepository.deleteAllUsers()) thenReturn {Future(true)}
+    val result:Boolean = Await.result(userService.deleteAllUsers(),5 seconds)
     assert(result)
   }
   it should "return false" in {
-    when(mockedUserRepository.deleteAllUsers()) thenReturn {false}
-    val result:Boolean = userService.deleteAllUsers()
+    when(mockedUserRepository.deleteAllUsers()) thenReturn {Future(false)}
+    val result:Boolean = Await.result(userService.deleteAllUsers(),5 seconds)
     assert(!result)
   }
 

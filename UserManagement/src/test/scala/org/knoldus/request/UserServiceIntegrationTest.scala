@@ -16,132 +16,137 @@
 
 package org.knoldus.request
 
-import org.knoldus.db.UserRepository
+import org.knoldus.database.UserTable
+import org.knoldus.repository.UserRepository
 import org.knoldus.model.{User, UserType}
 import org.knoldus.validator.Validator
 import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.flatspec.AnyFlatSpec
 
 import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class UserServiceIntegrationTest extends AnyFlatSpec{
   val validator = new Validator
-  val userRepository = new UserRepository
+  val userTable = new UserTable
+  val userRepository = new UserRepository(userTable)
   val user = User(None,"asbin bhadra","asbin143@gmail.com",Some("Barpeta Road"),"7988313043",UserType.Customer)
   val userService = new UserService(userRepository,validator)
-
-
+//
+//
   "addUser" should "return id" in{
-    val result = userService.addUser(user)
+    val result = Await.result(userService.addUser(user),5 seconds)
     assert(Some(result).nonEmpty)
+    Await.result(userService.deleteAllUsers(),5 seconds)
   }
   it should "throw RuntimeException as userid provided" in{
     assertThrows[RuntimeException] {
-      userService.addUser(user.copy(id = Some(UUID.randomUUID())))
+      Await.result(userService.addUser(user.copy(id = Some(UUID.randomUUID()))),5 seconds)
     }
   }
-
+//
   it should "throw RuntimeException as email id invalid" in{
     assertThrows[RuntimeException] {
-      userService.addUser(user.copy(email = "asbin@gma"))
+      Await.result(userService.addUser(user.copy(email = "asbin@gma")),5 seconds)
     }
   }
 
   it should "through RuntimeException as mobile number invalid" in{
     assertThrows[RuntimeException] {
-      userService.addUser(user.copy(mobileNumber = "798G3043"))
+      Await.result(userService.addUser(user.copy(mobileNumber = "798G3043")),5 seconds)
     }
   }
   it should "through RuntimeException as mobile number and email id invalid" in{
     assertThrows[RuntimeException] {
-      userService.addUser(user.copy(email = "asbin@gmail",mobileNumber = "7955g77111111"))
+      Await.result(userService.addUser(user.copy(email = "asbin@gmail",mobileNumber = "7955g77111111")), 5 seconds)
     }
   }
 
 
   "getUsers" should "return list of user" in{
-    userService.addUser(user)
-    val result:List[User] = userService.getUsers
+    Await.result(userService.addUser(user),5 seconds)
+    val result:List[User] = Await.result(userService.getUsers,5 seconds)
     assert(result.nonEmpty)
     userService.deleteAllUsers()
   }
 
   it should "return empty list" in {
-    userService.deleteAllUsers()
-    val result:List[User] = userService.getUsers
+    Await.result(userService.deleteAllUsers(),5 seconds)
+    val result:List[User] = Await.result(userService.getUsers,5 seconds)
     assert(result.isEmpty)
   }
 
   "getUserById" should "return list of user" in {
-    val userId = userService.addUser(user)
-    val result:List[User] = userService.getUserById(userId)
+    val userId = Await.result(userService.addUser(user),5 seconds)
+    val result:List[User] = Await.result(userService.getUserById(userId),5 seconds)
     assert(result.nonEmpty)
   }
 
   it should "throw RuntimeException" in {
     assertThrows[RuntimeException] {
-      userService.getUserById(Option(UUID.randomUUID()))
+      Await.result(userService.getUserById(Option(UUID.randomUUID())),5 seconds)
     }
     userService.deleteAllUsers()
   }
 
 
   "updateUser" should "return true" in{
-    val userId = userService.addUser(user)
-    val result:Boolean = userService.updateUser(userId,user.copy(userName = "Asbin123"))
+    val userId = Await.result(userService.addUser(user),5 seconds)
+    val result:Boolean = Await.result(userService.updateUser(userId,user.copy(userName = "Asbin123")), 5 seconds)
     assert(result)
     userService.deleteAllUsers()
   }
   it should "through RuntimeException as email id invalid" in{
-    val userId = userService.addUser(user)
+    val userId = Await.result(userService.addUser(user), 5 seconds)
     assertThrows[RuntimeException] {
-      userService.updateUser(userId,user.copy(userName = "Asbin123",email = "asbin@gmail"))
+      Await.result(userService.updateUser(userId,user.copy(userName = "Asbin123",email = "asbin@gmail")), 5 seconds)
     }
     userService.deleteAllUsers()
   }
   it should "through RuntimeException as mobile number invalid" in{
-    val userId = userService.addUser(user)
+    val userId = Await.result(userService.addUser(user), 5 seconds)
     assertThrows[RuntimeException] {
-      userService.updateUser(user.id,user.copy(userName = "Asbin123",mobileNumber = "79865g66111"))
+      Await.result(userService.updateUser(user.id,user.copy(userName = "Asbin123",mobileNumber = "79865g66111")), 5 seconds)
     }
     userService.deleteAllUsers()
   }
 
   it should "through RuntimeException as email id and mobile number invalid" in{
-    val userId = userService.addUser(user)
+    val userId = Await.result(userService.addUser(user), 5 seconds)
     assertThrows[RuntimeException] {
-      userService.updateUser(user.id,user.copy(userName = "Asbin123",email = "asbin@gmail",mobileNumber = "7988421jjj333"))
+      Await.result(userService.updateUser(user.id,user.copy(userName = "Asbin123",email = "asbin@gmail",mobileNumber = "7988421jjj333")), 5 seconds)
     }
     userService.deleteAllUsers()
   }
   it should "return false as user not found" in{
-    val userId = userService.addUser(user)
-    val result = userService.updateUser(Option(UUID.randomUUID()),user.copy(userName = "asbin143"))
+    val userId = Await.result(userService.addUser(user), 5 seconds)
+    val result = Await.result(userService.updateUser(Option(UUID.randomUUID()),user.copy(userName = "asbin143")),5 seconds)
     assert(!result)
     userService.deleteAllUsers()
   }
 
 
   "deleteUserById" should "return true" in {
-    val userId = userService.addUser(user)
-    val result:Boolean = userService.deleteUserById(userId)
+    val userId = Await.result(userService.addUser(user),5 seconds)
+    val result:Boolean = Await.result(userService.deleteUserById(userId),5 seconds)
     assert(result)
     userService.deleteAllUsers()
   }
   it should "return false" in {
-    val result:Boolean = userService.deleteUserById(Option(UUID.randomUUID()))
+    val result:Boolean = Await.result(userService.deleteUserById(Option(UUID.randomUUID())), 5 seconds)
     assert(!result)
     userService.deleteAllUsers()
   }
 
   "deleteAllUser" should "return true" in {
-    val userId = userService.addUser(user)
-    val result:Boolean = userService.deleteAllUsers()
+    val userId = Await.result(userService.addUser(user),5 seconds)
+    val result:Boolean = Await.result(userService.deleteAllUsers(),5 seconds)
     assert(result)
     userService.deleteAllUsers()
   }
   it should "return false as no user in the list" in {
-    val result:Boolean = userService.deleteAllUsers()
+    val result:Boolean = Await.result(userService.deleteAllUsers(),5 seconds)
     assert(!result)
   }
 
